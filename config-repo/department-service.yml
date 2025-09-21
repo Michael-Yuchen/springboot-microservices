@@ -1,0 +1,54 @@
+# Department Service specific configuration
+spring:
+  application:
+    name: DEPARTMENT-SERVICE
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: 123456!
+    hikari:
+      pool-name: DepartmentServicePool
+
+  jpa:
+    properties:
+      hibernate:
+        default_schema: department
+
+  flyway:
+    schemas: department
+    default-schema: department
+    table: flyway_schema_history_departments
+    create-schemas: true
+
+server:
+  port: 8082
+
+# Department Service specific configuration
+department:
+  service:
+    # Pagination default configuration
+    pagination:
+      default-page-size: 20
+      max-page-size: 100
+    
+    # Cache configuration
+    cache:
+      enabled: true
+      ttl: 600 # 10 minutes
+    
+    # Business rules configuration
+    business:
+      allow-delete-with-employees: false
+      max-name-length: 100
+      max-description-length: 500
+
+# Logging configuration
+logging:
+  level:
+    com.example.department: DEBUG
+
+# Feature toggles
+feature:
+  enable-employee-count: true
+  enable-protective-delete: true

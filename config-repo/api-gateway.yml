@@ -1,0 +1,45 @@
+# API Gateway specific configuration
+
+spring:
+  main:
+    web-application-type: reactive
+
+  application:
+    name: api-gateway
+  
+  cloud:
+    gateway:
+      routes:
+        - id: employee-service
+          uri: lb://EMPLOYEE-SERVICE
+          predicates:
+            - Path=/employees/**
+          filters:
+            - RewritePath=/employees(?<segment>/?.*), /api/v1/employees${segment}
+
+        - id: department-service
+          uri: lb://DEPARTMENT-SERVICE
+          predicates:
+            - Path=/departments/**
+          filters:
+            - RewritePath=/departments(?<segment>/?.*), /api/v1/departments${segment}
+
+      # Global filter configuration
+      default-filters:
+        - name: AddRequestHeader
+          args:
+            name: X-Gateway-Source
+            value: api-gateway
+
+server:
+  port: 8080
+
+# Logging configuration
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.example.gateway: INFO
+
+# Feature toggles
+feature:
+  enable-request-logging: true

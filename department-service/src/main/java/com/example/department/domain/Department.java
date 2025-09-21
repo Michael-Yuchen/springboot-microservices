@@ -1,6 +1,7 @@
 package com.example.department.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
@@ -11,8 +12,13 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "name is required")
     @Column(nullable = false, length = 120)
     private String name;
+
+    @NotBlank(message = "code is required")
+    @Column(nullable = false, unique = true, length = 20)
+    private String code;
 
     @Column(columnDefinition = "text")
     private String description;
