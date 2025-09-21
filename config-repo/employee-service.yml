@@ -24,32 +24,32 @@ spring:
 server:
   port: 8081
 
-# Employee Service specific configuration
+
 employee:
   service:
-    # Pagination default configuration
+    
     pagination:
       default-page-size: 20
       max-page-size: 100
     
-    # Cache configuration
+    
     cache:
       enabled: true
       ttl: 300 # 5 minutes
     
-    # Business rules configuration
+    
     business:
       max-allocation-percent: 100
       default-allocation-percent: 50
 
-# Logging configuration
+
 logging:
   level:
     com.example.employee: DEBUG
     org.springframework.cloud.openfeign: DEBUG
 
 
-# Feature toggles
+
 feature:
   enable-department-enrichment: true
   enable-bulk-operations: true

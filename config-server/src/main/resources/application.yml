@@ -5,15 +5,12 @@ spring:
     config:
       server:
         git:
-          # Use local file system as configuration repository
+        
           uri: file://${user.dir}/config-repo
-          # If using Git repository, configure like this:
-          # uri: https://github.com/your-username/your-config-repo.git
-          # default-label: main
-        # Support local file system
+        
         native:
           search-locations: classpath:/config-repo
-      # Allow all configurations
+   
       allow-override: true
       override-none: true
 

@@ -1,4 +1,4 @@
-# API Gateway specific configuration
+
 
 spring:
   main:
@@ -24,7 +24,7 @@ spring:
           filters:
             - RewritePath=/departments(?<segment>/?.*), /api/v1/departments${segment}
 
-      # Global filter configuration
+      
       default-filters:
         - name: AddRequestHeader
           args:
@@ -34,12 +34,12 @@ spring:
 server:
   port: 8080
 
-# Logging configuration
+
 logging:
   level:
     org.springframework.cloud.gateway: INFO
     com.example.gateway: INFO
 
-# Feature toggles
+
 feature:
   enable-request-logging: true

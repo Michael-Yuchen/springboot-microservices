@@ -69,7 +69,7 @@ class DepartmentServiceTest {
         // Given
         when(repository.findById(999L)).thenReturn(Optional.empty());
 
-        // When & Then
+        
         assertThatThrownBy(() -> service.getById(999L))
                 .isInstanceOf(RuntimeException.class);
         verify(repository).findById(999L);
@@ -78,15 +78,15 @@ class DepartmentServiceTest {
     @Test
     @DisplayName("create(): saves and returns department")
     void create_saves_and_returns_department() {
-        // Given
+       
         Department input = Department.builder().name("Finance").description("Money things").build();
         Department saved = Department.builder().id(1L).name("Finance").description("Money things").build();
         when(repository.save(any(Department.class))).thenReturn(saved);
 
-        // When
+        
         Department result = service.create(input);
 
-        // Then
+       
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Finance");
