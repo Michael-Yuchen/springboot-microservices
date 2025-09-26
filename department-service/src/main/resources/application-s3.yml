@@ -1,0 +1,28 @@
+# AWS S3 Configuration
+aws:
+  s3:
+    bucket: ${AWS_S3_BUCKET:microservices-department-files}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY:}
+    secret-key: ${AWS_SECRET_KEY:}
+    endpoint: ${AWS_S3_ENDPOINT:}
+    path-style-access: false
+    chunk-size: 1048576 # 1MB
+    multipart-threshold: 10485760 # 10MB
+    multipart-min-part-size: 5242880 # 5MB
+
+# File Upload Configuration
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+      file-size-threshold: 2KB
+      location: ${java.io.tmpdir}
+
+# S3 Health Check
+management:
+  health:
+    s3:
+      enabled: true

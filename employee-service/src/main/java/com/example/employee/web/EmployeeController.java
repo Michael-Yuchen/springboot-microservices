@@ -1,5 +1,6 @@
 package com.example.employee.web;
 
+import com.example.employee.annotation.ApiVersion;
 import com.example.employee.dto.*;
 import com.example.employee.service.EmployeeService;
 import jakarta.validation.Valid;
@@ -10,8 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/employees")
+@RequestMapping("/api/employees")
 @RequiredArgsConstructor
+@ApiVersion("v1")
 public class EmployeeController {
 
     private final EmployeeService service;

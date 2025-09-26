@@ -1,5 +1,6 @@
 package com.example.employee.web;
 
+import com.example.employee.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -70,6 +71,30 @@ public class GlobalExceptionHandler {
         return base(HttpStatus.valueOf(ex.getStatusCode().value()),
                 Optional.ofNullable(ex.getReason()).orElse("Error"),
                 Optional.ofNullable(ex.getMessage()).orElse(""), req);
+    }
+
+    /** 404 — Employee not found. */
+    @ExceptionHandler(EmployeeNotFoundException.class)
+    public ProblemDetail handleEmployeeNotFound(EmployeeNotFoundException ex, HttpServletRequest req) {
+        return base(HttpStatus.NOT_FOUND, "Employee not found", ex.getMessage(), req);
+    }
+
+    /** 400 — Employee validation failed. */
+    @ExceptionHandler(EmployeeValidationException.class)
+    public ProblemDetail handleEmployeeValidation(EmployeeValidationException ex, HttpServletRequest req) {
+        return base(HttpStatus.BAD_REQUEST, "Employee validation failed", ex.getMessage(), req);
+    }
+
+    /** 409 — Employee conflict (duplicate email, etc.). */
+    @ExceptionHandler(EmployeeConflictException.class)
+    public ProblemDetail handleEmployeeConflict(EmployeeConflictException ex, HttpServletRequest req) {
+        return base(HttpStatus.CONFLICT, "Employee conflict", ex.getMessage(), req);
+    }
+
+    /** 503 — Department service unavailable. */
+    @ExceptionHandler(DepartmentServiceException.class)
+    public ProblemDetail handleDepartmentService(DepartmentServiceException ex, HttpServletRequest req) {
+        return base(HttpStatus.SERVICE_UNAVAILABLE, "Department service unavailable", ex.getMessage(), req);
     }
 
     /** 500 — Fallback (do not leak stack traces to clients). */

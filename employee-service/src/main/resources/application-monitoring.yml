@@ -1,0 +1,48 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        http.client.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.95, 0.99
+        http.client.requests: 0.5, 0.95, 0.99
+    tags:
+      application: employee-service
+      environment: ${ENVIRONMENT:development}
+
+logging:
+  level:
+    org.springframework.cloud.sleuth: DEBUG
+    com.example.employee: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"
+
+# Custom metrics
+management:
+  metrics:
+    custom:
+      employee:
+        created:
+          counter: true
+        updated:
+          counter: true
+        deleted:
+          counter: true
+        total:
+          gauge: true

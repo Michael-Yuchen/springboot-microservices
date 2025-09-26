@@ -1,5 +1,6 @@
 package com.example.department.web;
 
+import com.example.department.annotation.ApiVersion;
 import com.example.department.domain.Department;
 import com.example.department.dto.*;
 import com.example.department.service.DepartmentService;
@@ -9,8 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/departments")
+@RequestMapping("/api/departments")
 @RequiredArgsConstructor
+@ApiVersion("v1")
 public class DepartmentController {
 
     private final DepartmentService service;

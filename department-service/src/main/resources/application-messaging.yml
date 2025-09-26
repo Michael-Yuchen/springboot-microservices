@@ -1,0 +1,46 @@
+spring:
+  cloud:
+    stream:
+      bindings:
+        departmentCreated-out-0:
+          destination: department-created
+          contentType: application/json
+        departmentUpdated-out-0:
+          destination: department-updated
+          contentType: application/json
+        departmentDeleted-out-0:
+          destination: department-deleted
+          contentType: application/json
+        employeeCreated-in-0:
+          destination: employee-created
+          contentType: application/json
+        employeeUpdated-in-0:
+          destination: employee-updated
+          contentType: application/json
+        employeeDeleted-in-0:
+          destination: employee-deleted
+          contentType: application/json
+      rabbit:
+        bindings:
+          departmentCreated-out-0:
+            producer:
+              routing-key-expression: "'department.created'"
+          departmentUpdated-out-0:
+            producer:
+              routing-key-expression: "'department.updated'"
+          departmentDeleted-out-0:
+            producer:
+              routing-key-expression: "'department.deleted'"
+          employeeCreated-in-0:
+            consumer:
+              routing-key: "employee.created"
+          employeeUpdated-in-0:
+            consumer:
+              routing-key: "employee.updated"
+          employeeDeleted-in-0:
+            consumer:
+              routing-key: "employee.deleted"
+
+logging:
+  level:
+    com.example.department.messaging: DEBUG

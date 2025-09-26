@@ -3,8 +3,11 @@ package com.example.employee.service;
 import com.example.employee.client.DepartmentClient;
 import com.example.employee.domain.Employee;
 import com.example.employee.dto.*;
+import com.example.employee.event.*;
+import com.example.employee.exception.*;
+import com.example.employee.messaging.EmployeeEventPublisher;
+import com.example.employee.metrics.EmployeeMetrics;
 import com.example.employee.repo.EmployeeRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +26,8 @@ public class EmployeeService {
 
     private final EmployeeRepository repository;
     private final DepartmentClient departmentClient;
+    private final EmployeeEventPublisher eventPublisher;
+    private final EmployeeMetrics metrics;
 
     public List<EmployeeDTO> getAll() {
         return repository.findAll().stream()
@@ -47,14 +52,14 @@ public class EmployeeService {
     }
 
     public EmployeeDTO getById(Long id, boolean enrichWithDepartment) {
-        Employee e = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+        Employee e = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
         return toDTO(e, enrichWithDepartment);
     }
 
     @Transactional
     public EmployeeDTO create(EmployeeDTO dto) {
         if (repository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new EmployeeConflictException("email", dto.getEmail());
         }
         Employee e = Employee.builder()
                 .firstName(dto.getFirstName())
@@ -63,12 +68,28 @@ public class EmployeeService {
                 .departmentId(dto.getDepartmentId())
                 .build();
         e = repository.save(e);
+        
+        // Publish employee created event
+        EmployeeCreatedEvent event = EmployeeCreatedEvent.builder()
+                .employeeId(e.getId())
+                .firstName(e.getFirstName())
+                .lastName(e.getLastName())
+                .email(e.getEmail())
+                .departmentId(e.getDepartmentId())
+                .createdAt(e.getCreatedAt())
+                .build();
+        eventPublisher.publishEmployeeCreated(event);
+        
+        // Record metrics
+        metrics.incrementEmployeeCreated();
+        metrics.setTotalEmployees(repository.count());
+        
         return toDTO(e);
     }
 
     @Transactional
     public EmployeeDTO update(Long id, EmployeeUpdateRequest request) {
-        Employee e = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+        Employee e = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
         
         // Check for email conflicts (excluding current employee)
         if (request.getEmail() != null && !request.getEmail().equals(e.getEmail())) {
@@ -84,12 +105,27 @@ public class EmployeeService {
         if (request.getDepartmentId() != null) e.setDepartmentId(request.getDepartmentId());
         
         e = repository.save(e);
+        
+        // Publish employee updated event
+        EmployeeUpdatedEvent event = EmployeeUpdatedEvent.builder()
+                .employeeId(e.getId())
+                .firstName(e.getFirstName())
+                .lastName(e.getLastName())
+                .email(e.getEmail())
+                .departmentId(e.getDepartmentId())
+                .updatedAt(e.getUpdatedAt())
+                .build();
+        eventPublisher.publishEmployeeUpdated(event);
+        
+        // Record metrics
+        metrics.incrementEmployeeUpdated();
+        
         return toDTO(e);
     }
 
     @Transactional
     public EmployeeDTO patch(Long id, EmployeePatchRequest request) {
-        Employee e = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+        Employee e = repository.findById(id).orElseThrow(() -> new EmployeeNotFoundException(id));
         
         // Check for email conflicts (excluding current employee)
         if (request.getEmail() != null && !request.getEmail().equals(e.getEmail())) {
@@ -110,10 +146,25 @@ public class EmployeeService {
 
     @Transactional
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new EntityNotFoundException("Employee not found");
-        }
+        Employee employee = repository.findById(id)
+                .orElseThrow(() -> new EmployeeNotFoundException(id));
+        
+        // Publish employee deleted event before deletion
+        EmployeeDeletedEvent event = EmployeeDeletedEvent.builder()
+                .employeeId(employee.getId())
+                .firstName(employee.getFirstName())
+                .lastName(employee.getLastName())
+                .email(employee.getEmail())
+                .departmentId(employee.getDepartmentId())
+                .deletedAt(java.time.LocalDateTime.now())
+                .build();
+        eventPublisher.publishEmployeeDeleted(event);
+        
         repository.deleteById(id);
+        
+        // Record metrics
+        metrics.incrementEmployeeDeleted();
+        metrics.setTotalEmployees(repository.count());
     }
 
     public List<EmployeeDTO> search(String query) {

@@ -1,0 +1,53 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      employee-service:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - com.example.department.exception.DepartmentNotFoundException
+  retry:
+    instances:
+      employee-service:
+        maxAttempts: 3
+        waitDuration: 1s
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - com.example.department.exception.DepartmentNotFoundException
+  timelimiter:
+    instances:
+      employee-service:
+        timeoutDuration: 3s
+        cancelRunningFuture: true
+  bulkhead:
+    instances:
+      employee-service:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 1s
+
+management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,metrics
+  metrics:
+    export:
+      prometheus:
+        enabled: true

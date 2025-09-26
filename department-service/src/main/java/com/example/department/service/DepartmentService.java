@@ -3,6 +3,10 @@ package com.example.department.service;
 import com.example.department.client.EmployeeClient;
 import com.example.department.domain.Department;
 import com.example.department.dto.*;
+import com.example.department.event.*;
+import com.example.department.exception.*;
+import com.example.department.messaging.DepartmentEventPublisher;
+import com.example.department.metrics.DepartmentMetrics;
 import com.example.department.repo.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,6 +26,8 @@ public class DepartmentService {
 
     private final DepartmentRepository repository;
     private final EmployeeClient employeeClient;
+    private final DepartmentEventPublisher eventPublisher;
+    private final DepartmentMetrics metrics;
 
     public List<Department> getAll() {
         return repository.findAll();
@@ -44,12 +50,12 @@ public class DepartmentService {
 
     public Department getById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found with id: " + id));
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
     }
 
     public DepartmentDTO getByCode(String code) {
         Department department = repository.findByCode(code)
-                .orElseThrow(() -> new RuntimeException("Department not found with code: " + code));
+                .orElseThrow(() -> new DepartmentNotFoundException(code, true));
         return toDTO(department);
     }
 
@@ -57,15 +63,31 @@ public class DepartmentService {
     public Department create(Department department) {
         // Check for unique code constraint
         if (repository.existsByCode(department.getCode())) {
-            throw new IllegalArgumentException("Department code already exists: " + department.getCode());
+            throw new DepartmentConflictException("code", department.getCode());
         }
-        return repository.save(department);
+        Department saved = repository.save(department);
+        
+        // Publish department created event
+        DepartmentCreatedEvent event = DepartmentCreatedEvent.builder()
+                .departmentId(saved.getId())
+                .name(saved.getName())
+                .code(saved.getCode())
+                .description(saved.getDescription())
+                .createdAt(saved.getCreatedAt())
+                .build();
+        eventPublisher.publishDepartmentCreated(event);
+        
+        // Record metrics
+        metrics.incrementDepartmentCreated();
+        metrics.setTotalDepartments(repository.count());
+        
+        return saved;
     }
 
     @Transactional
     public DepartmentDTO update(Long id, DepartmentUpdateRequest request) {
         Department d = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found with id: " + id));
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
         
         // Check for code conflicts (excluding current department)
         if (request.getCode() != null && !request.getCode().equals(d.getCode())) {
@@ -80,13 +102,27 @@ public class DepartmentService {
         if (request.getDescription() != null) d.setDescription(request.getDescription());
         
         d = repository.save(d);
+        
+        // Publish department updated event
+        DepartmentUpdatedEvent event = DepartmentUpdatedEvent.builder()
+                .departmentId(d.getId())
+                .name(d.getName())
+                .code(d.getCode())
+                .description(d.getDescription())
+                .updatedAt(d.getUpdatedAt())
+                .build();
+        eventPublisher.publishDepartmentUpdated(event);
+        
+        // Record metrics
+        metrics.incrementDepartmentUpdated();
+        
         return toDTO(d);
     }
 
     @Transactional
     public DepartmentDTO patch(Long id, DepartmentPatchRequest request) {
         Department d = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found with id: " + id));
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
         
         // Check for code conflicts (excluding current department)
         if (request.getCode() != null && !request.getCode().equals(d.getCode())) {
@@ -106,26 +142,41 @@ public class DepartmentService {
 
     @Transactional
     public void delete(Long id) {
-        repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found with id: " + id));
+        Department department = repository.findById(id)
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
         
         // Check if department has employees (protective delete)
         try {
             List<Object> employees = employeeClient.getEmployeesByDepartment(id);
             if (employees != null && !employees.isEmpty()) {
-                throw new IllegalStateException("Cannot delete department with employees. Please reassign employees first.");
+                throw new DepartmentDeletionException(id, employees.size());
             }
+        } catch (DepartmentDeletionException e) {
+            throw e; // Re-throw our custom exception
         } catch (Exception e) {
             // If we can't check employees, we'll allow deletion but log the issue
             // In a real scenario, you might want to be more strict about this
         }
         
+        // Publish department deleted event before deletion
+        DepartmentDeletedEvent event = DepartmentDeletedEvent.builder()
+                .departmentId(department.getId())
+                .name(department.getName())
+                .code(department.getCode())
+                .deletedAt(java.time.LocalDateTime.now())
+                .build();
+        eventPublisher.publishDepartmentDeleted(event);
+        
         repository.deleteById(id);
+        
+        // Record metrics
+        metrics.incrementDepartmentDeleted();
+        metrics.setTotalDepartments(repository.count());
     }
 
     public DepartmentEmployeesResponse getDepartmentEmployees(Long id) {
         Department department = repository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Department not found with id: " + id));
+                .orElseThrow(() -> new DepartmentNotFoundException(id));
         
         List<Object> employees = new ArrayList<>();
         try {
@@ -146,7 +197,7 @@ public class DepartmentService {
                 .build();
     }
 
-    private DepartmentDTO toDTO(Department d) {
+    public DepartmentDTO toDTO(Department d) {
         return DepartmentDTO.builder()
                 .id(d.getId())
                 .name(d.getName())

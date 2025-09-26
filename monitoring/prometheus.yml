@@ -1,0 +1,92 @@
+# Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'microservices'
+    environment: 'production'
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Gateway
+  - job_name: 'api-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['api-gateway-1:8080', 'api-gateway-2:8080']
+    scrape_interval: 10s
+
+  # Employee Service
+  - job_name: 'employee-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: 
+          - 'employee-service-1:8081'
+          - 'employee-service-2:8081'
+          - 'employee-service-3:8081'
+    scrape_interval: 10s
+
+  # Department Service
+  - job_name: 'department-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - 'department-service-1:8082'
+          - 'department-service-2:8082'
+          - 'department-service-3:8082'
+    scrape_interval: 10s
+
+  # Discovery Service
+  - job_name: 'discovery-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['discovery-service:8761']
+
+  # Config Server
+  - job_name: 'config-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['config-server:8888']
+
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-1:6379', 'redis-2:6379', 'redis-3:6379']
+
+  # PostgreSQL
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgresql:5432']
+
+  # RabbitMQ
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15692']
+
+  # Node Exporter (System Metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: 
+          - 'node-exporter-1:9100'
+          - 'node-exporter-2:9100'
+          - 'node-exporter-3:9100'
+
+  # cAdvisor (Container Metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets:
+          - 'cadvisor-1:8080'
+          - 'cadvisor-2:8080'
+          - 'cadvisor-3:8080'

@@ -1,0 +1,79 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: cache-service
+  
+  # Redis Configuration
+  redis:
+    host: ${REDIS_HOST:redis-cluster}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 20
+        max-idle: 10
+        min-idle: 5
+        max-wait: -1ms
+      shutdown-timeout: 100ms
+    cluster:
+      nodes: ${REDIS_CLUSTER_NODES:redis-1:6379,redis-2:6379,redis-3:6379}
+      max-redirects: 3
+  
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour
+      cache-null-values: false
+      enable-statistics: true
+      key-prefix: "cache:"
+      use-key-prefix: true
+  
+  # Session Configuration
+  session:
+    store-type: redis
+    redis:
+      namespace: "session:"
+      flush-mode: on_save
+      save-mode: on_set_attribute
+
+# Eureka Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,redis
+  endpoint:
+    health:
+      show-details: always
+    redis:
+      enabled: true
+
+# Cache Statistics
+management:
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    cache:
+      enabled: true
+
+# Logging Configuration
+logging:
+  level:
+    com.example.cache: DEBUG
+    org.springframework.cache: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId},%X{spanId}] %logger{36} - %msg%n"

@@ -1,0 +1,132 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Microservices Architecture Dashboard",
+    "tags": ["microservices", "architecture"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"employee-service|department-service|api-gateway\"}",
+            "legendFormat": "{{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count[5m])",
+            "legendFormat": "{{instance}} - {{method}} {{uri}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Response Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile - {{instance}}"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx errors - {{instance}}"
+          },
+          {
+            "expr": "rate(http_server_requests_seconds_count{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx errors - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Circuit Breaker Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "resilience4j_circuitbreaker_state",
+            "legendFormat": "{{name}} - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Database Connections",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "hikaricp_connections_active",
+            "legendFormat": "Active connections - {{instance}}"
+          },
+          {
+            "expr": "hikaricp_connections_idle",
+            "legendFormat": "Idle connections - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Redis Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "redis_commands_processed_total",
+            "legendFormat": "Commands processed - {{instance}}"
+          },
+          {
+            "expr": "redis_connected_clients",
+            "legendFormat": "Connected clients - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 8,
+        "title": "System Resources",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage % - {{instance}}"
+          },
+          {
+            "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+            "legendFormat": "Memory Usage % - {{instance}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

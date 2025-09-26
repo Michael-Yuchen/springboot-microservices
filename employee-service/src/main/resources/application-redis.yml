@@ -1,0 +1,43 @@
+spring:
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    database: 0
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
+      shutdown-timeout: 100ms
+    cluster:
+      nodes: ${REDIS_CLUSTER_NODES:}
+      max-redirects: 3
+
+# Cache Configuration
+spring:
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000 # 10 minutes
+      cache-null-values: false
+      enable-statistics: true
+      key-prefix: "employee:"
+      use-key-prefix: true
+
+# Session Configuration
+spring:
+  session:
+    store-type: redis
+    redis:
+      namespace: "employee:session"
+      flush-mode: on_save
+      save-mode: on_set_attribute
+
+# Redis Health Check
+management:
+  health:
+    redis:
+      enabled: true

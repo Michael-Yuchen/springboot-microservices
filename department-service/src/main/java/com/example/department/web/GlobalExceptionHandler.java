@@ -1,5 +1,6 @@
 package com.example.department.web;
 
+import com.example.department.exception.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.MDC;
@@ -63,6 +64,36 @@ public class GlobalExceptionHandler {
         return base(HttpStatus.valueOf(ex.getStatusCode().value()),
                 Optional.ofNullable(ex.getReason()).orElse("Error"),
                 Optional.ofNullable(ex.getMessage()).orElse(""), req);
+    }
+
+    /** 404 — Department not found. */
+    @ExceptionHandler(DepartmentNotFoundException.class)
+    public ProblemDetail handleDepartmentNotFound(DepartmentNotFoundException ex, HttpServletRequest req) {
+        return base(HttpStatus.NOT_FOUND, "Department not found", ex.getMessage(), req);
+    }
+
+    /** 400 — Department validation failed. */
+    @ExceptionHandler(DepartmentValidationException.class)
+    public ProblemDetail handleDepartmentValidation(DepartmentValidationException ex, HttpServletRequest req) {
+        return base(HttpStatus.BAD_REQUEST, "Department validation failed", ex.getMessage(), req);
+    }
+
+    /** 409 — Department conflict (duplicate code, etc.). */
+    @ExceptionHandler(DepartmentConflictException.class)
+    public ProblemDetail handleDepartmentConflict(DepartmentConflictException ex, HttpServletRequest req) {
+        return base(HttpStatus.CONFLICT, "Department conflict", ex.getMessage(), req);
+    }
+
+    /** 409 — Department deletion failed due to existing employees. */
+    @ExceptionHandler(DepartmentDeletionException.class)
+    public ProblemDetail handleDepartmentDeletion(DepartmentDeletionException ex, HttpServletRequest req) {
+        return base(HttpStatus.CONFLICT, "Department deletion failed", ex.getMessage(), req);
+    }
+
+    /** 503 — Employee service unavailable. */
+    @ExceptionHandler(EmployeeServiceException.class)
+    public ProblemDetail handleEmployeeService(EmployeeServiceException ex, HttpServletRequest req) {
+        return base(HttpStatus.SERVICE_UNAVAILABLE, "Employee service unavailable", ex.getMessage(), req);
     }
 
     @ExceptionHandler(Exception.class)
